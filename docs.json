@@ -1,0 +1,1182 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CCTP v2 Cross-Chain USDC Transfer API",
+    "description": "RESTful API for Circle's Cross-Chain Transfer Protocol v2 enabling native USDC transfers across blockchains in ~15 seconds",
+    "version": "2.0.0",
+    "contact": {
+      "name": "CCTP v2 API Support",
+      "url": "https://developers.circle.com/stablecoin/docs/cctp-getting-started"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://api.your-domain.com",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Service",
+      "description": "Service information and health checks"
+    },
+    {
+      "name": "Chains",
+      "description": "Supported blockchain networks"
+    },
+    {
+      "name": "Balance",
+      "description": "USDC balance operations"
+    },
+    {
+      "name": "Transfers",
+      "description": "Cross-chain USDC transfer operations"
+    },
+    {
+      "name": "Approvals",
+      "description": "USDC spending approvals"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": ["Service"],
+        "summary": "Get service information",
+        "description": "Returns service overview, supported chains, and available endpoints",
+        "operationId": "getServiceInfo",
+        "responses": {
+          "200": {
+            "description": "Service information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceInfo"
+                },
+                "example": {
+                  "message": "Cross-Chain USDC Transfer Service (CCTP v2)",
+                  "description": "RESTful API for Circle's Cross-Chain Transfer Protocol",
+                  "version": "2.0.0",
+                  "supportedChains": ["ethereum", "polygon", "arbitrum", "avalanche", "base", "optimism"],
+                  "endpoints": {
+                    "/chains": "GET - List supported chains",
+                    "/balance/:chain/:address": "GET - Get USDC balance",
+                    "/transfer/initiate": "POST - Initiate cross-chain transfer",
+                    "/transfer/complete": "POST - Complete cross-chain transfer",
+                    "/transfer/status/:messageHash": "GET - Get transfer status",
+                    "/transfer/estimate": "POST - Estimate transfer costs"
+                  },
+                  "timestamp": "2024-01-15T10:30:00.000Z"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["Service"],
+        "summary": "Health check",
+        "description": "Returns service health status and uptime",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthStatus"
+                },
+                "example": {
+                  "status": "OK",
+                  "service": "CCTP v2 Service",
+                  "uptime": 3600.123,
+                  "timestamp": "2024-01-15T10:30:00.000Z"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chains": {
+      "get": {
+        "tags": ["Chains"],
+        "summary": "List supported chains",
+        "description": "Returns all supported blockchain networks with their configurations",
+        "operationId": "getSupportedChains",
+        "responses": {
+          "200": {
+            "description": "Supported chains retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportedChains"
+                },
+                "example": {
+                  "supportedChains": [
+                    {
+                      "name": "ethereum",
+                      "chainId": 1,
+                      "domain": 0,
+                      "usdcAddress": "0xA0b86a33E6441986C3F0b05937aE9a5d6E73cC5F",
+                      "rpcUrl": "Configured"
+                    },
+                    {
+                      "name": "polygon",
+                      "chainId": 137,
+                      "domain": 7,
+                      "usdcAddress": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+                      "rpcUrl": "Configured"
+                    }
+                  ],
+                  "totalChains": 6,
+                  "note": "Configure RPC URLs in environment variables for production use"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/balance/{chain}/{address}": {
+      "get": {
+        "tags": ["Balance"],
+        "summary": "Get USDC balance",
+        "description": "Retrieve USDC balance for a specific address on a given blockchain",
+        "operationId": "getUSDCBalance",
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "path",
+            "required": true,
+            "description": "Blockchain network name",
+            "schema": {
+              "$ref": "#/components/schemas/ChainName"
+            },
+            "example": "ethereum"
+          },
+          {
+            "name": "address",
+            "in": "path",
+            "required": true,
+            "description": "Ethereum address to check balance for",
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-fA-F0-9]{40}$"
+            },
+            "example": "0x742d35Cc6bf2f4E087629b72AA5Bb4Dc22e4a8C0"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Balance retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceResponse"
+                },
+                "example": {
+                  "chain": "ethereum",
+                  "address": "0x742d35Cc6bf2f4E087629b72AA5Bb4Dc22e4a8C0",
+                  "balance": "1000.500000",
+                  "decimals": 6,
+                  "symbol": "USDC",
+                  "timestamp": "2024-01-15T10:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "unsupported_chain": {
+                    "summary": "Unsupported chain",
+                    "value": {
+                      "error": "Unsupported chain",
+                      "supportedChains": ["ethereum", "polygon", "arbitrum", "avalanche", "base", "optimism"]
+                    }
+                  },
+                  "invalid_address": {
+                    "summary": "Invalid address format",
+                    "value": {
+                      "error": "Invalid Ethereum address format"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transfer/initiate": {
+      "post": {
+        "tags": ["Transfers"],
+        "summary": "Initiate cross-chain transfer",
+        "description": "Start a cross-chain USDC transfer by burning tokens on the source chain",
+        "operationId": "initiateTransfer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiateTransferRequest"
+              },
+              "example": {
+                "sourceChain": "ethereum",
+                "destinationChain": "polygon",
+                "amount": "100.0",
+                "recipient": "0x742d35Cc6bf2f4E087629b72AA5Bb4Dc22e4a8C0",
+                "senderPrivateKey": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transfer initiated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitiateTransferResponse"
+                },
+                "example": {
+                  "success": true,
+                  "transfer": {
+                    "txHash": "0xabc123...",
+                    "nonce": "0x1234...",
+                    "message": "0xdef456...",
+                    "sourceChain": "ethereum",
+                    "destinationChain": "polygon",
+                    "amount": "100.0",
+                    "recipient": "0x742d35Cc6bf2f4E087629b72AA5Bb4Dc22e4a8C0",
+                    "status": "initiated",
+                    "estimatedTime": "~15 seconds for attestation"
+                  },
+                  "next": {
+                    "action": "Wait for attestation, then call /transfer/complete",
+                    "statusEndpoint": "/transfer/status/0xdef456...",
+                    "completeEndpoint": "/transfer/complete"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "missing_fields": {
+                    "summary": "Missing required fields",
+                    "value": {
+                      "error": "Missing required fields",
+                      "required": ["sourceChain", "destinationChain", "amount", "recipient"]
+                    }
+                  },
+                  "same_chain": {
+                    "summary": "Same source and destination",
+                    "value": {
+                      "error": "Source and destination chains must be different"
+                    }
+                  },
+                  "invalid_recipient": {
+                    "summary": "Invalid recipient address",
+                    "value": {
+                      "error": "Invalid recipient address format"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Transfer failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "PrivateKey": []
+          }
+        ]
+      }
+    },
+    "/transfer/status/{messageHash}": {
+      "get": {
+        "tags": ["Transfers"],
+        "summary": "Get transfer status",
+        "description": "Check the status of a cross-chain transfer and retrieve attestation when ready",
+        "operationId": "getTransferStatus",
+        "parameters": [
+          {
+            "name": "messageHash",
+            "in": "path",
+            "required": true,
+            "description": "Message hash from the initiated transfer",
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-fA-F0-9]+$"
+            },
+            "example": "0xdef456789abcdef123456789abcdef123456789abcdef123456789abcdef1234"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transfer status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferStatusResponse"
+                },
+                "examples": {
+                  "pending": {
+                    "summary": "Transfer pending attestation",
+                    "value": {
+                      "messageHash": "0xdef456...",
+                      "status": {
+                        "status": "pending",
+                        "txHash": "0xabc123...",
+                        "sourceDomain": 0,
+                        "destinationDomain": 7,
+                        "amount": "100000000",
+                        "recipient": "0x742d35Cc6bf2f4E087629b72AA5Bb4Dc22e4a8C0",
+                        "estimatedTime": "~15 seconds"
+                      },
+                      "ready": false,
+                      "timestamp": "2024-01-15T10:30:00.000Z"
+                    }
+                  },
+                  "attested": {
+                    "summary": "Transfer ready to complete",
+                    "value": {
+                      "messageHash": "0xdef456...",
+                      "status": {
+                        "status": "attested",
+                        "txHash": "0xabc123...",
+                        "sourceDomain": 0,
+                        "destinationDomain": 7,
+                        "amount": "100000000",
+                        "recipient": "0x742d35Cc6bf2f4E087629b72AA5Bb4Dc22e4a8C0",
+                        "attestation": "0x987fed...",
+                        "estimatedTime": "Ready"
+                      },
+                      "ready": true,
+                      "timestamp": "2024-01-15T10:30:15.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid message hash format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to check transfer status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transfer/complete": {
+      "post": {
+        "tags": ["Transfers"],
+        "summary": "Complete cross-chain transfer",
+        "description": "Complete a cross-chain transfer by submitting the message and attestation to the destination chain",
+        "operationId": "completeTransfer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteTransferRequest"
+              },
+              "example": {
+                "destinationChain": "polygon",
+                "message": "0xdef456789abcdef123456789abcdef123456789abcdef123456789abcdef1234",
+                "attestation": "0x987fedcba9876543210987654321098765432109876543210987654321098765",
+                "privateKey": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transfer completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteTransferResponse"
+                },
+                "example": {
+                  "success": true,
+                  "completion": {
+                    "txHash": "0x789abc...",
+                    "destinationChain": "polygon",
+                    "status": "completed",
+                    "blockNumber": 12345678,
+                    "timestamp": "2024-01-15T10:30:30.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "missing_fields": {
+                    "summary": "Missing required fields",
+                    "value": {
+                      "error": "Missing required fields",
+                      "required": ["destinationChain", "message", "attestation"]
+                    }
+                  },
+                  "unsupported_chain": {
+                    "summary": "Unsupported destination chain",
+                    "value": {
+                      "error": "Unsupported destination chain",
+                      "supportedChains": ["ethereum", "polygon", "arbitrum", "avalanche", "base", "optimism"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Transfer completion failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transfer/estimate": {
+      "post": {
+        "tags": ["Transfers"],
+        "summary": "Estimate transfer costs",
+        "description": "Get gas cost estimates for a cross-chain transfer",
+        "operationId": "estimateTransferCosts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstimateTransferRequest"
+              },
+              "example": {
+                "sourceChain": "ethereum",
+                "destinationChain": "polygon",
+                "amount": "100.0"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cost estimates retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimateTransferResponse"
+                },
+                "example": {
+                  "sourceChain": "ethereum",
+                  "destinationChain": "polygon",
+                  "amount": "100.0",
+                  "gasEstimates": {
+                    "sourceGasEstimate": "150000",
+                    "destinationGasEstimate": "120000"
+                  },
+                  "note": "Gas estimates are approximate and may vary based on network conditions",
+                  "timestamp": "2024-01-15T10:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to estimate costs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transfer/approve": {
+      "post": {
+        "tags": ["Approvals"],
+        "summary": "Approve USDC spending",
+        "description": "Approve USDC spending for the CCTP TokenMessenger contract",
+        "operationId": "approveUSDC",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveUSDCRequest"
+              },
+              "example": {
+                "chain": "ethereum",
+                "privateKey": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                "amount": "1000.0"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Approval transaction submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApproveUSDCResponse"
+                },
+                "example": {
+                  "success": true,
+                  "approval": {
+                    "txHash": "0x456def...",
+                    "chain": "ethereum",
+                    "amount": "1000.0",
+                    "spender": "0xbd3fa81b58ba92a82136038b25adec7066af3155",
+                    "status": "pending"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Approval failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "PrivateKey": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChainName": {
+        "type": "string",
+        "enum": ["ethereum", "polygon", "arbitrum", "avalanche", "base", "optimism"],
+        "description": "Supported blockchain network names"
+      },
+      "EthereumAddress": {
+        "type": "string",
+        "pattern": "^0x[a-fA-F0-9]{40}$",
+        "description": "Valid Ethereum address format",
+        "example": "0x742d35Cc6bf2f4E087629b72AA5Bb4Dc22e4a8C0"
+      },
+      "PrivateKey": {
+        "type": "string",
+        "pattern": "^0x[a-fA-F0-9]{64}$",
+        "description": "Private key in hexadecimal format",
+        "example": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+      },
+      "Amount": {
+        "type": "string",
+        "pattern": "^[0-9]+\\.?[0-9]*$",
+        "description": "USDC amount with up to 6 decimal places",
+        "example": "100.500000"
+      },
+      "TransactionHash": {
+        "type": "string",
+        "pattern": "^0x[a-fA-F0-9]{64}$",
+        "description": "Ethereum transaction hash",
+        "example": "0xabc123def456789abc123def456789abc123def456789abc123def456789abc123"
+      },
+      "ServiceInfo": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Service name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Service description"
+          },
+          "version": {
+            "type": "string",
+            "description": "API version"
+          },
+          "supportedChains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChainName"
+            },
+            "description": "List of supported blockchain networks"
+          },
+          "endpoints": {
+            "type": "object",
+            "description": "Available API endpoints"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Response timestamp"
+          }
+        },
+        "required": ["message", "description", "version", "supportedChains", "endpoints", "timestamp"]
+      },
+      "HealthStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["OK", "ERROR"],
+            "description": "Service health status"
+          },
+          "service": {
+            "type": "string",
+            "description": "Service name"
+          },
+          "uptime": {
+            "type": "number",
+            "description": "Service uptime in seconds"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Response timestamp"
+          }
+        },
+        "required": ["status", "service", "uptime", "timestamp"]
+      },
+      "ChainConfig": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/ChainName"
+          },
+          "chainId": {
+            "type": "integer",
+            "description": "Blockchain network ID"
+          },
+          "domain": {
+            "type": "integer",
+            "description": "CCTP domain identifier"
+          },
+          "usdcAddress": {
+            "$ref": "#/components/schemas/EthereumAddress"
+          },
+          "rpcUrl": {
+            "type": "string",
+            "description": "RPC endpoint status"
+          }
+        },
+        "required": ["name", "chainId", "domain", "usdcAddress", "rpcUrl"]
+      },
+      "SupportedChains": {
+        "type": "object",
+        "properties": {
+          "supportedChains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChainConfig"
+            },
+            "description": "List of supported blockchain configurations"
+          },
+          "totalChains": {
+            "type": "integer",
+            "description": "Total number of supported chains"
+          },
+          "note": {
+            "type": "string",
+            "description": "Configuration note"
+          }
+        },
+        "required": ["supportedChains", "totalChains"]
+      },
+      "BalanceResponse": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "$ref": "#/components/schemas/ChainName"
+          },
+          "address": {
+            "$ref": "#/components/schemas/EthereumAddress"
+          },
+          "balance": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "decimals": {
+            "type": "integer",
+            "enum": [6],
+            "description": "USDC decimal places"
+          },
+          "symbol": {
+            "type": "string",
+            "enum": ["USDC"],
+            "description": "Token symbol"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Response timestamp"
+          }
+        },
+        "required": ["chain", "address", "balance", "decimals", "symbol", "timestamp"]
+      },
+      "InitiateTransferRequest": {
+        "type": "object",
+        "properties": {
+          "sourceChain": {
+            "$ref": "#/components/schemas/ChainName"
+          },
+          "destinationChain": {
+            "$ref": "#/components/schemas/ChainName"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/EthereumAddress"
+          },
+          "senderPrivateKey": {
+            "$ref": "#/components/schemas/PrivateKey"
+          }
+        },
+        "required": ["sourceChain", "destinationChain", "amount", "recipient", "senderPrivateKey"]
+      },
+      "TransferInfo": {
+        "type": "object",
+        "properties": {
+          "txHash": {
+            "$ref": "#/components/schemas/TransactionHash"
+          },
+          "nonce": {
+            "type": "string",
+            "description": "Transfer nonce"
+          },
+          "message": {
+            "type": "string",
+            "description": "CCTP message hash"
+          },
+          "sourceChain": {
+            "$ref": "#/components/schemas/ChainName"
+          },
+          "destinationChain": {
+            "$ref": "#/components/schemas/ChainName"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/EthereumAddress"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["initiated"],
+            "description": "Transfer status"
+          },
+          "estimatedTime": {
+            "type": "string",
+            "description": "Estimated time for completion"
+          }
+        },
+        "required": ["txHash", "nonce", "message", "sourceChain", "destinationChain", "amount", "recipient", "status", "estimatedTime"]
+      },
+      "InitiateTransferResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [true],
+            "description": "Operation success status"
+          },
+          "transfer": {
+            "$ref": "#/components/schemas/TransferInfo"
+          },
+          "next": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Next step instructions"
+              },
+              "statusEndpoint": {
+                "type": "string",
+                "description": "Endpoint to check transfer status"
+              },
+              "completeEndpoint": {
+                "type": "string",
+                "description": "Endpoint to complete transfer"
+              }
+            },
+            "required": ["action", "statusEndpoint", "completeEndpoint"]
+          }
+        },
+        "required": ["success", "transfer", "next"]
+      },
+      "TransferStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["pending", "attested", "complete", "failed"],
+            "description": "Current transfer status"
+          },
+          "txHash": {
+            "$ref": "#/components/schemas/TransactionHash"
+          },
+          "sourceDomain": {
+            "type": "integer",
+            "description": "Source chain domain"
+          },
+          "destinationDomain": {
+            "type": "integer",
+            "description": "Destination chain domain"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Transfer amount in smallest units"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/EthereumAddress"
+          },
+          "nonce": {
+            "type": "string",
+            "description": "Transfer nonce"
+          },
+          "attestation": {
+            "type": "string",
+            "description": "Circle's attestation signature (when ready)"
+          },
+          "messageBytes": {
+            "type": "string",
+            "description": "Original message bytes"
+          },
+          "estimatedTime": {
+            "type": "string",
+            "description": "Estimated completion time"
+          }
+        },
+        "required": ["status", "txHash", "sourceDomain", "destinationDomain", "amount", "recipient"]
+      },
+      "TransferStatusResponse": {
+        "type": "object",
+        "properties": {
+          "messageHash": {
+            "type": "string",
+            "description": "CCTP message hash"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TransferStatus"
+          },
+          "ready": {
+            "type": "boolean",
+            "description": "Whether transfer is ready to complete"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Response timestamp"
+          }
+        },
+        "required": ["messageHash", "status", "ready", "timestamp"]
+      },
+      "CompleteTransferRequest": {
+        "type": "object",
+        "properties": {
+          "destinationChain": {
+            "$ref": "#/components/schemas/ChainName"
+          },
+          "message": {
+            "type": "string",
+            "description": "CCTP message from initiate response"
+          },
+          "attestation": {
+            "type": "string",
+            "description": "Circle's attestation signature"
+          },
+          "privateKey": {
+            "$ref": "#/components/schemas/PrivateKey",
+            "description": "Private key for transaction execution (optional)"
+          }
+        },
+        "required": ["destinationChain", "message", "attestation"]
+      },
+      "CompleteTransferResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [true],
+            "description": "Operation success status"
+          },
+          "completion": {
+            "type": "object",
+            "properties": {
+              "txHash": {
+                "$ref": "#/components/schemas/TransactionHash"
+              },
+              "destinationChain": {
+                "$ref": "#/components/schemas/ChainName"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["completed"],
+                "description": "Completion status"
+              },
+              "blockNumber": {
+                "type": "integer",
+                "description": "Block number of completion transaction"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Completion timestamp"
+              }
+            },
+            "required": ["txHash", "destinationChain", "status", "timestamp"]
+          }
+        },
+        "required": ["success", "completion"]
+      },
+      "EstimateTransferRequest": {
+        "type": "object",
+        "properties": {
+          "sourceChain": {
+            "$ref": "#/components/schemas/ChainName"
+          },
+          "destinationChain": {
+            "$ref": "#/components/schemas/ChainName"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Amount"
+          }
+        },
+        "required": ["sourceChain", "destinationChain", "amount"]
+      },
+      "GasEstimates": {
+        "type": "object",
+        "properties": {
+          "sourceGasEstimate": {
+            "type": "string",
+            "description": "Estimated gas for source chain transaction"
+          },
+          "destinationGasEstimate": {
+            "type": "string",
+            "description": "Estimated gas for destination chain transaction"
+          },
+          "totalFeesUSD": {
+            "type": "string",
+            "description": "Total estimated fees in USD"
+          }
+        },
+        "required": ["sourceGasEstimate", "destinationGasEstimate"]
+      },
+      "EstimateTransferResponse": {
+        "type": "object",
+        "properties": {
+          "sourceChain": {
+            "$ref": "#/components/schemas/ChainName"
+          },
+          "destinationChain": {
+            "$ref": "#/components/schemas/ChainName"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "gasEstimates": {
+            "$ref": "#/components/schemas/GasEstimates"
+          },
+          "note": {
+            "type": "string",
+            "description": "Important note about estimates"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Response timestamp"
+          }
+        },
+        "required": ["sourceChain", "destinationChain", "amount", "gasEstimates", "timestamp"]
+      },
+      "ApproveUSDCRequest": {
+        "type": "object",
+        "properties": {
+          "chain": {
+            "$ref": "#/components/schemas/ChainName"
+          },
+          "privateKey": {
+            "$ref": "#/components/schemas/PrivateKey"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Amount"
+          }
+        },
+        "required": ["chain", "privateKey", "amount"]
+      },
+      "ApprovalInfo": {
+        "type": "object",
+        "properties": {
+          "txHash": {
+            "$ref": "#/components/schemas/TransactionHash"
+          },
+          "chain": {
+            "$ref": "#/components/schemas/ChainName"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "spender": {
+            "$ref": "#/components/schemas/EthereumAddress"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "confirmed"],
+            "description": "Approval transaction status"
+          }
+        },
+        "required": ["txHash", "chain", "amount", "spender", "status"]
+      },
+      "ApproveUSDCResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [true],
+            "description": "Operation success status"
+          },
+          "approval": {
+            "$ref": "#/components/schemas/ApprovalInfo"
+          }
+        },
+        "required": ["success", "approval"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "message": {
+            "type": "string",
+            "description": "Detailed error description"
+          },
+          "supportedChains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChainName"
+            },
+            "description": "Supported chains (when applicable)"
+          },
+          "required": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Required fields (when applicable)"
+          }
+        },
+        "required": ["error"]
+      }
+    },
+    "securitySchemes": {
+      "PrivateKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Private-Key",
+        "description": "Private key for transaction signing (use secure key management in production)"
+      }
+    }
+  },
+  "security": [
+    {
+      "PrivateKey": []
+    }
+  ]
+}
